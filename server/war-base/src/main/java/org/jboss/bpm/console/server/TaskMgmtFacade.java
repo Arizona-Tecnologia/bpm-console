@@ -126,7 +126,10 @@ public class TaskMgmtFacade
   )
   {
     log.debug("Close task " + taskId );
-    getTaskManagement().completeTask(taskId, null, request.getUserPrincipal().getName());
+
+      String assignee = getTaskManagement().getTaskById(taskId).getAssignee();
+
+      getTaskManagement().completeTask(taskId, null, assignee);
     return Response.ok().build();
   }
 
@@ -143,7 +146,8 @@ public class TaskMgmtFacade
   )
   {
     log.debug("Close task " + taskId + " outcome " + outcome);
-    getTaskManagement().completeTask(taskId, outcome, null, request.getUserPrincipal().getName());
+    String assignee = getTaskManagement().getTaskById(taskId).getAssignee();
+    getTaskManagement().completeTask(taskId, outcome, null, assignee);
     return Response.ok().build();
   }
 

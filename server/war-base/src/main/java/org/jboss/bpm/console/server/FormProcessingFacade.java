@@ -153,10 +153,12 @@ public class FormProcessingFacade
     FieldMapping mapping = createFieldMapping(payload);
 
     // complete task
-    String username = request.getUserPrincipal() != null ?
-        request.getUserPrincipal().getName() : null;
+//    String username = request.getUserPrincipal() != null ?
+//        request.getUserPrincipal().getName() : null;
 
-    String outcomeDirective = mapping.directives.get("outcome");
+      //Get user from payload, the user will not be logged in jbpm
+      String username = (String) mapping.processVars.get("userId");
+      String outcomeDirective = mapping.directives.get("outcome");
 
     if(outcomeDirective!=null)
     {
