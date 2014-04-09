@@ -216,6 +216,17 @@ public class ProcessMgmtFacade
 
   }
 
+    @GET
+    @Path("definition/{id}/nodes/human")
+    @Produces("application/json")
+    public Response getHumanTaskNodesJSON(
+            @PathParam("id")
+            String definitionId ){
+        HumanTaskNodeRefWrapper wrapper =
+                new HumanTaskNodeRefWrapper(getProcessManagement().getHumanTaskNodeListForProcess(definitionId));
+        return createJsonResponse(wrapper);
+    }
+
   @GET
   @Path("instance/{id}/dataset")
   @Produces("text/xml")
@@ -233,8 +244,7 @@ public class ProcessMgmtFacade
 	  log.error("Error when getting instance data", e);	
 	  ResponseBuilder builder = Response.fromResponse(Response.ok(e.getMessage()).build());
 	  builder.status(Status.INTERNAL_SERVER_ERROR);
-		
-	  return builder.build();
+      return builder.build();
 	}
     
   }

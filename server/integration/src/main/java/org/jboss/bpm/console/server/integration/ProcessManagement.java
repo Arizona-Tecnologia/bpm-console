@@ -21,6 +21,7 @@
  */
 package org.jboss.bpm.console.server.integration;
 
+import org.jboss.bpm.console.client.model.HumanTaskNodeRef;
 import org.jboss.bpm.console.client.model.ProcessDefinitionRef;
 import org.jboss.bpm.console.client.model.ProcessInstanceRef;
 
@@ -58,5 +59,8 @@ public interface ProcessManagement
   void setProcessState(String instanceId, ProcessInstanceRef.STATE nextState);
 
   void signalExecution(String executionId, String signal);
-  
+
+  List<HumanTaskNodeRef> getHumanTaskNodeListForProcess(String processId);
+
+
 }
