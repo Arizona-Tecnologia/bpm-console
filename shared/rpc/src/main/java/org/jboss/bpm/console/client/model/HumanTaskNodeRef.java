@@ -17,6 +17,7 @@ public class HumanTaskNodeRef {
     private String taskName;
     private String priority;
     private String actors;
+    private String groups;
 
     @XmlElement(name = "nodeId")
     public String getId() {
@@ -67,6 +68,18 @@ public class HumanTaskNodeRef {
         this.actors = actors;
         return this;
     }
+
+    @XmlElement(name = "groups")
+    public String getGroups() {
+        return groups;
+    }
+
+    public HumanTaskNodeRef setGroups(String groups) {
+        this.groups = groups;
+        return this;
+    }
+
+
 
     @Override
     public String toString() {
