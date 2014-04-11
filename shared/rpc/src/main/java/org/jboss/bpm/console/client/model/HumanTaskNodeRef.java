@@ -55,7 +55,7 @@ public class HumanTaskNodeRef {
     }
 
     public HumanTaskNodeRef setPriority(String priority) {
-        this.priority = priority;
+        this.priority = priority == null? "0" : priority;
         return this;
     }
 
@@ -65,7 +65,7 @@ public class HumanTaskNodeRef {
     }
 
     public HumanTaskNodeRef setActors(String actors) {
-        this.actors = actors;
+        this.actors = actors == null ? "" : actors;
         return this;
     }
 
@@ -75,7 +75,7 @@ public class HumanTaskNodeRef {
     }
 
     public HumanTaskNodeRef setGroups(String groups) {
-        this.groups = groups;
+        this.groups = groups == null ? "" : groups;
         return this;
     }
 

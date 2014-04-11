@@ -12,26 +12,26 @@ import java.util.List;
  */
 @XmlRootElement(name = "wrapper")
 public class HumanTaskNodeRefWrapper {
-    List<HumanTaskNodeRef> humanTaskNodeRefList;
+    List<HumanTaskNodeRef> nodes;
 
     public HumanTaskNodeRefWrapper() {
     }
-    public HumanTaskNodeRefWrapper(List<HumanTaskNodeRef> humanTaskNodeRefList) {
-        this.humanTaskNodeRefList = humanTaskNodeRefList;
+    public HumanTaskNodeRefWrapper(List<HumanTaskNodeRef> nodes) {
+        this.nodes = nodes;
     }
 
     @XmlElement(name = "humanTaskNodes")
-    public List<HumanTaskNodeRef> getHumanTaskNodeRefList() {
-        return humanTaskNodeRefList;
+    public List<HumanTaskNodeRef> getNodes() {
+        return nodes;
     }
 
-    public void setHumanTaskNodeRefList(List<HumanTaskNodeRef> humanTaskNodeRefList) {
-        this.humanTaskNodeRefList = humanTaskNodeRefList;
+    public void setNodes(List<HumanTaskNodeRef> nodes) {
+        this.nodes = nodes;
     }
 
     @XmlElement(name = "totalCount")
     public int getTotalCount(){
-        return humanTaskNodeRefList.size();
+        return nodes.size();
     }
 
 
