@@ -96,7 +96,12 @@ public class TaskMgmtFacade
   )
   {
     log.debug("Assign task " + taskId + " to '" + idRef +"'");
-    getTaskManagement().assignTask(taskId, idRef, request.getUserPrincipal().getName());
+      String assignee = getAssignee(request, taskId);
+      if(assignee == null || assignee.trim().equals("")) {
+          assignee = idRef;
+      }
+
+    getTaskManagement().assignTask(taskId, idRef, assignee);
     return Response.ok().build();
   }
 
@@ -111,7 +116,7 @@ public class TaskMgmtFacade
   )
   {
     log.debug("Release task " + taskId);
-    getTaskManagement().assignTask(taskId, null, request.getUserPrincipal().getName());
+      getTaskManagement().assignTask(taskId, null, getAssignee(request, taskId));
     return Response.ok().build();
   }
 
@@ -126,7 +131,7 @@ public class TaskMgmtFacade
   )
   {
     log.debug("Close task " + taskId );
-    getTaskManagement().completeTask(taskId, null, request.getUserPrincipal().getName());
+      getTaskManagement().completeTask(taskId, null, getAssignee(request, taskId));
     return Response.ok().build();
   }
 
@@ -143,8 +148,21 @@ public class TaskMgmtFacade
   )
   {
     log.debug("Close task " + taskId + " outcome " + outcome);
-    getTaskManagement().completeTask(taskId, outcome, null, request.getUserPrincipal().getName());
+      getTaskManagement().completeTask(taskId, outcome, null, getAssignee(request, taskId));
     return Response.ok().build();
   }
 
+
+    /**
+     *
+      * @param request
+     * @param taskId
+     * @return  In case of none authentication, returns the assignee of the task
+     */
+  private String getAssignee(HttpServletRequest request,
+                         long taskId) {
+      return request.getUserPrincipal() == null ?
+              getTaskManagement().getTaskById(taskId).getAssignee()
+              : request.getUserPrincipal().getName();
+  }
 }

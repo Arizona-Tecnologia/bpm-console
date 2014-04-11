@@ -154,7 +154,7 @@ public class FormProcessingFacade
 
     // complete task
     String username = request.getUserPrincipal() != null ?
-        request.getUserPrincipal().getName() : null;
+        request.getUserPrincipal().getName() :(String) mapping.processVars.get("userId");
 
     String outcomeDirective = mapping.directives.get("outcome");
 
