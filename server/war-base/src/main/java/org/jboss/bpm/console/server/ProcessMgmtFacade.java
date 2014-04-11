@@ -457,8 +457,7 @@ public class ProcessMgmtFacade
 
   }
 
-  private Response createJsonResponse(Object wrapper)
-  {
+  private Response createJsonResponse(Object wrapper)  {
     Gson gson = GsonFactory.createInstance();
     String json = gson.toJson(wrapper);
     return Response.ok(json).type("application/json").build();

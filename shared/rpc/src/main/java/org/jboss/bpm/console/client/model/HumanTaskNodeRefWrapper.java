@@ -20,7 +20,7 @@ public class HumanTaskNodeRefWrapper {
         this.humanTaskNodeRefList = humanTaskNodeRefList;
     }
 
-    @XmlElement(name="humanTaskNodes")
+    @XmlElement(name = "humanTaskNodes")
     public List<HumanTaskNodeRef> getHumanTaskNodeRefList() {
         return humanTaskNodeRefList;
     }
