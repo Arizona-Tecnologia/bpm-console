@@ -21,6 +21,13 @@
  */
 package org.jboss.bpm.console.server;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.node.ObjectNode;
 import org.jboss.bpm.console.server.integration.ManagementFactory;
 import org.jboss.bpm.console.server.integration.TaskManagement;
 import org.jboss.bpm.console.server.plugin.FormDispatcherPlugin;
@@ -29,6 +36,9 @@ import org.jboss.bpm.console.server.util.ProjectName;
 import org.jboss.bpm.console.server.util.RsComment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
@@ -152,6 +162,37 @@ public class TaskMgmtFacade
     return Response.ok().build();
   }
 
+  @PUT
+  @Path("{taskId}")
+  @Consumes("application/json")
+  @Produces("application/json")
+  public Response updateTaskContent(
+	      @PathParam("taskId") long taskId,
+	      JSONTaskObject jsonObject) {
+	  
+	  log.debug("updateTaskContent task " + taskId);
+	  
+	  Map<String, String> newData = toMap(jsonObject);
+	  
+	  if (! newData.isEmpty()) { 
+		  getTaskManagement().updateTaskContent(taskId, newData);
+	  }
+	  
+	  return Response.ok().build();
+  }
+
+	private Map<String, String> toMap(JSONTaskObject jsonObject) {
+		
+		Map<String, String> map = new HashMap<String, String>();
+		
+		Set<Entry<String, JsonNode>> entrySet = jsonObject.getExtraProperties().entrySet();
+		
+		for (Entry<String, JsonNode> entry : entrySet) {
+			map.put(entry.getKey(), entry.getValue().asText());
+		}
+		
+		return map;
+	}
 
     /**
      *
