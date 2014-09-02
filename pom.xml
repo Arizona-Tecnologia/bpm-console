@@ -62,6 +62,8 @@
     </licenses>
 
     <properties>
+        <visto-jbpm-extensions.version>2.1.0-SNAPSHOT</visto-jbpm-extensions.version> 
+    
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <commons.fileupload.version>1.2.1</commons.fileupload.version>
         <commons.io.version>1.4</commons.io.version>
@@ -99,6 +101,12 @@
 
     <dependencyManagement>
         <dependencies>
+        
+            <dependency>
+              <groupId>br.com.arizona</groupId>
+              <artifactId>visto-jbpm-extensions</artifactId>
+              <version>${visto-jbpm-extensions.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>commons-lang</groupId>

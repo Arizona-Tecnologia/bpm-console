@@ -31,6 +31,7 @@ import org.jboss.bpm.console.server.plugin.*;
 import org.jboss.bpm.console.server.util.Payload2XML;
 import org.jboss.bpm.console.server.util.ProjectName;
 import org.jboss.bpm.console.server.util.RsComment;
+import org.jbpm.persistence.processinstance.ProcessInstanceComment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -117,14 +118,6 @@ public class ProcessMgmtFacade
     return activityPlugin;
   }
 
-  @GET
-  @Path("definitions")
-  @Produces("application/json")
-  public Response getDefinitionsJSON()
-  {
-    List<ProcessDefinitionRef> processDefinitions = getProcessManagement().getProcessDefinitions();
-    return decorateProcessDefintions(processDefinitions);
-  }
 
   /**
    * Enriches {@link org.jboss.bpm.console.client.model.ProcessDefinitionRef} with
@@ -165,6 +158,21 @@ public class ProcessMgmtFacade
     ProcessDefinitionRefWrapper wrapper =
         new ProcessDefinitionRefWrapper(processDefinitions);
     return createJsonResponse(wrapper);
+  } 
+
+  private Response createJsonResponse(Object wrapper)  {
+    Gson gson = GsonFactory.createInstance();
+    String json = gson.toJson(wrapper);
+    return Response.ok(json).type("application/json").build();
+  }
+
+  @GET
+  @Path("definitions")
+  @Produces("application/json")
+  public Response getDefinitionsJSON()
+  {
+    List<ProcessDefinitionRef> processDefinitions = getProcessManagement().getProcessDefinitions();
+    return decorateProcessDefintions(processDefinitions);
   }
 
   @POST
@@ -432,7 +440,6 @@ public class ProcessMgmtFacade
     throw new RuntimeException(
         GraphViewerPlugin.class.getName()+ " not available."
     );
-
   }
   
   @GET
@@ -440,8 +447,8 @@ public class ProcessMgmtFacade
   @Produces("application/json")
   @RsComment(project = {ProjectName.JBPM})
   public Response getNodeInfoForActivities(
-      @PathParam("id")
-      String id, @QueryParam("activity") String[] activities)
+      @PathParam("id") String id,
+      @QueryParam("activity") String[] activities)
   {
 
     GraphViewerPlugin plugin = getGraphViewerPlugin();
@@ -454,12 +461,49 @@ public class ProcessMgmtFacade
     throw new RuntimeException(
         GraphViewerPlugin.class.getName()+ " not available."
     );
-
   }
-
-  private Response createJsonResponse(Object wrapper)  {
-    Gson gson = GsonFactory.createInstance();
-    String json = gson.toJson(wrapper);
-    return Response.ok(json).type("application/json").build();
-  }
+  
+  
+	@GET
+	@Path("instance/{id}/comments")
+	@Produces("text/json")
+	public Response getInstanceComments(
+			@PathParam("id") String instanceId
+	)
+	{
+		try {
+			log.debug("getInstanceComments (id="+instanceId+")");
+			List<ProcessInstanceComment> list = getProcessManagement().getProcessInstanceComments(instanceId);
+			return Response.ok(list).type("application/json").build();
+		} catch (Exception e) {
+			log.error("Error when getting process instance comments for (id="+instanceId+")", e);	
+			ResponseBuilder builder = Response.fromResponse(Response.ok(e.getMessage()).build());
+			builder.status(Status.INTERNAL_SERVER_ERROR);
+			
+			return builder.build();
+		}
+	    
+	}
+	
+	@GET
+	@Path("instance/{id}/comments/{group}")
+	@Produces("text/json")
+	public Response getInstanceComments(
+			@PathParam("id") String instanceId,
+			@PathParam("group") String group
+	)
+	{
+		try {
+			log.debug("getInstanceComments (id="+instanceId+", group="+group+")");
+			List<ProcessInstanceComment> list = getProcessManagement().getProcessInstanceComments(instanceId, group);
+			return Response.ok(list).type("application/json").build();
+		} catch (Exception e) {
+			log.error("Error when getting process instance comments for (id="+instanceId+", group="+group+")", e);	
+			ResponseBuilder builder = Response.fromResponse(Response.ok(e.getMessage()).build());
+			builder.status(Status.INTERNAL_SERVER_ERROR);
+			
+			return builder.build();
+		}
+	    
+	}
 }

@@ -24,6 +24,7 @@ package org.jboss.bpm.console.server.integration;
 import org.jboss.bpm.console.client.model.HumanTaskNodeRef;
 import org.jboss.bpm.console.client.model.ProcessDefinitionRef;
 import org.jboss.bpm.console.client.model.ProcessInstanceRef;
+import org.jbpm.persistence.processinstance.ProcessInstanceComment;
 
 import java.util.List;
 import java.util.Map;
@@ -62,5 +63,7 @@ public interface ProcessManagement
 
   List<HumanTaskNodeRef> getHumanTaskNodeListForProcess(String processId);
 
+  List<ProcessInstanceComment> getProcessInstanceComments(String instanceId);
 
+  List<ProcessInstanceComment> getProcessInstanceComments(String instanceId, String group);
 }
