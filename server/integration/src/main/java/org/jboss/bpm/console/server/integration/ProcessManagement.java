@@ -63,7 +63,13 @@ public interface ProcessManagement
 
   List<HumanTaskNodeRef> getHumanTaskNodeListForProcess(String processId);
 
-  List<ProcessInstanceComment> getProcessInstanceComments(String instanceId);
+  List<ProcessInstanceComment> getProcessInstanceComments(Long instanceId);
 
-  List<ProcessInstanceComment> getProcessInstanceComments(String instanceId, String group);
+  List<ProcessInstanceComment> getProcessInstanceComments(Long instanceId, String group);
+  
+  ProcessInstanceComment createProcessInstanceComment(ProcessInstanceComment comment);
+  
+  ProcessInstanceComment updateProcessInstanceComment(ProcessInstanceComment comment);
+  
+  void deleteProcessInstanceComment(ProcessInstanceComment comment);
 }

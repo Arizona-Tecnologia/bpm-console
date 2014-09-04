@@ -466,15 +466,19 @@ public class ProcessMgmtFacade
   
 	@GET
 	@Path("instance/{id}/comments")
-	@Produces("text/json")
+	@Produces("application/json")
 	public Response getInstanceComments(
-			@PathParam("id") String instanceId
+			@PathParam("id") Long instanceId
 	)
 	{
+		log.debug("GET getInstanceComments (id="+instanceId+")");
+		
 		try {
-			log.debug("getInstanceComments (id="+instanceId+")");
+			
 			List<ProcessInstanceComment> list = getProcessManagement().getProcessInstanceComments(instanceId);
+			
 			return Response.ok(list).type("application/json").build();
+			
 		} catch (Exception e) {
 			log.error("Error when getting process instance comments for (id="+instanceId+")", e);	
 			ResponseBuilder builder = Response.fromResponse(Response.ok(e.getMessage()).build());
@@ -486,24 +490,111 @@ public class ProcessMgmtFacade
 	}
 	
 	@GET
-	@Path("instance/{id}/comments/{group}")
-	@Produces("text/json")
+	@Path("instance/{id}/comments/{channel}")
+	@Produces("application/json")
 	public Response getInstanceComments(
-			@PathParam("id") String instanceId,
-			@PathParam("group") String group
+			@PathParam("id") Long instanceId,
+			@PathParam("channel") String channel
 	)
 	{
+		log.debug("GET getInstanceComments (id="+instanceId+", channel="+channel+")");
+		
 		try {
-			log.debug("getInstanceComments (id="+instanceId+", group="+group+")");
-			List<ProcessInstanceComment> list = getProcessManagement().getProcessInstanceComments(instanceId, group);
+			
+			List<ProcessInstanceComment> list = getProcessManagement().getProcessInstanceComments(instanceId, channel);
+			
 			return Response.ok(list).type("application/json").build();
+			
 		} catch (Exception e) {
-			log.error("Error when getting process instance comments for (id="+instanceId+", group="+group+")", e);	
+			log.error("Error when getting process instance comments for (id="+instanceId+", channel="+channel+")", e);	
 			ResponseBuilder builder = Response.fromResponse(Response.ok(e.getMessage()).build());
 			builder.status(Status.INTERNAL_SERVER_ERROR);
 			
 			return builder.build();
 		}
-	    
+	}
+	
+	@POST
+	@Path("instance/{id}/comments")
+	@Consumes("application/json")
+	@Produces("application/json")
+	public Response createInstanceComment(
+			@PathParam("id") Long instanceId,
+			ProcessInstanceComment comment)
+	{
+		log.debug("POST createInstanceComment (id="+instanceId+", comment="+comment+")");
+		
+		comment.setProcessInstanceId(instanceId);
+		
+		try {
+			
+			getProcessManagement().createProcessInstanceComment(comment);
+			
+			return Response.ok().type("application/json").build();
+			
+		} catch (Exception e) {
+			log.error("Error when createInstanceComment (id="+instanceId+", comment="+comment+")", e);	
+			ResponseBuilder builder = Response.fromResponse(Response.ok(e.getMessage()).build());
+			builder.status(Status.INTERNAL_SERVER_ERROR);
+			
+			return builder.build();
+		}
+	}
+	
+	@PUT
+	@Path("instance/{id}/comments/{commentId}")
+	@Consumes("application/json")
+	@Produces("application/json")
+	public Response updateInstanceComment(
+			@PathParam("id") Long instanceId,
+			@PathParam("commentId") Long commentId,
+			ProcessInstanceComment comment)
+	{
+		log.debug("PUT updateInstanceComment (id="+instanceId+", commentId="+commentId+", comment="+comment+")");
+		
+		comment.setId(commentId);
+		comment.setProcessInstanceId(instanceId);
+		
+		try {
+			
+			getProcessManagement().updateProcessInstanceComment(comment);
+			
+			return Response.ok().build();
+			
+		} catch (Exception e) {
+			log.error("Error when updateInstanceComment (id="+instanceId+", commentId="+commentId+", comment="+comment+")", e);	
+			ResponseBuilder builder = Response.fromResponse(Response.ok(e.getMessage()).build());
+			builder.status(Status.INTERNAL_SERVER_ERROR);
+			
+			return builder.build();
+		}
+	}
+	
+	@DELETE
+	@Path("instance/{id}/comments/{commentId}")
+	@Produces("application/json")
+	public Response deleteInstanceComment(
+			@PathParam("id") Long instanceId,
+			@PathParam("commentId") Long commentId)
+	{
+		log.debug("DELETE deleteInstanceComment (id="+instanceId+", commentId="+commentId+")");
+		
+		ProcessInstanceComment comment = new ProcessInstanceComment();
+		comment.setId(commentId);
+		comment.setProcessInstanceId(instanceId);
+		
+		try {
+			
+			getProcessManagement().deleteProcessInstanceComment(comment);
+			
+			return Response.ok().build();
+			
+		} catch (Exception e) {
+			log.error("Error when deleteInstanceComment (id="+instanceId+", commentId="+commentId+")", e);	
+			ResponseBuilder builder = Response.fromResponse(Response.ok(e.getMessage()).build());
+			builder.status(Status.INTERNAL_SERVER_ERROR);
+			
+			return builder.build();
+		}
 	}
 }
