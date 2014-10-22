@@ -22,10 +22,12 @@
 package org.jboss.bpm.console.server;
 
 import com.google.gson.Gson;
+import org.jboss.bpm.console.client.model.KeyValue;
 import org.jboss.bpm.console.client.model.TaskRef;
 import org.jboss.bpm.console.client.model.TaskRefWrapper;
 import org.jboss.bpm.console.server.gson.GsonFactory;
 import org.jboss.bpm.console.server.integration.ManagementFactory;
+import org.jboss.bpm.console.server.integration.ProcessManagement;
 import org.jboss.bpm.console.server.integration.TaskManagement;
 import org.jboss.bpm.console.server.plugin.PluginMgr;
 import org.jboss.bpm.console.server.plugin.FormAuthorityRef;
@@ -39,9 +41,12 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import java.net.URL;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * REST server module for accessing task related data.
@@ -59,6 +64,7 @@ public class TaskListFacade
   private static final Logger log = LoggerFactory.getLogger(TaskMgmtFacade.class);
 
   private TaskManagement taskManagement;
+  private ProcessManagement processManagement;
   private FormDispatcherPlugin formPlugin;
 
   /**
@@ -76,7 +82,20 @@ public class TaskListFacade
     return this.taskManagement;
   }
 
-  /**
+  private ProcessManagement getProcessManagement()
+  {
+    if(null==this.processManagement)
+    {
+      ManagementFactory factory = ManagementFactory.newInstance();
+      this.processManagement = factory.createProcessManagement();
+      log.debug("Using ManagementFactory impl:" + factory.getClass().getName());
+    }
+
+    return this.processManagement;
+  }
+
+
+    /**
    * Lazy load the {@link org.jboss.bpm.console.server.plugin.FormDispatcherPlugin}.
    * Can be null if the plugin is not available.
    */
@@ -95,11 +114,18 @@ public class TaskListFacade
   @Produces("application/json")
   public Response getTasksForIdRef(
       @PathParam("idRef")
-      String idRef
+      String idRef,
+      @QueryParam("instanceData")
+      String instanceData
   )
   {
-    List<TaskRef> assignedTasks = getTaskManagement().getAssignedTasks(idRef);
-    return processTaskListResponse(assignedTasks);
+    if (instanceData == null) {
+      List<TaskRef> assignedTasks = getTaskManagement().getAssignedTasks(idRef);
+      return processTaskListResponse(assignedTasks);
+    } else {
+        List<TaskRef> assignedTasks = getTaskManagement().getAssignedTasks(idRef);
+        return buildResponse(assignedTasks);
+    }
   }
 
   @GET
@@ -107,11 +133,33 @@ public class TaskListFacade
   @Produces("application/json")
   public Response getTasksForIdRefParticipation(
       @PathParam("idRef")
-      String idRef
+      String idRef,
+      @QueryParam("instanceData")
+      String instanceData
   )
   {
-    List<TaskRef> taskParticipation = getTaskManagement().getUnassignedTasks(idRef, null);
-    return processTaskListResponse(taskParticipation);
+    if (instanceData == null) {
+      List<TaskRef> taskParticipation = getTaskManagement().getUnassignedTasks(idRef, null);
+      return processTaskListResponse(taskParticipation);
+    } else {
+        List<TaskRef> taskParticipation = getTaskManagement().getUnassignedTasks(idRef, null);
+        return buildResponse(taskParticipation);
+    }
+  }
+
+  private Response buildResponse(List<TaskRef> tasks) {
+    for (TaskRef assignedTask : tasks) {
+      final String processInstanceId = assignedTask.getProcessInstanceId();
+      final LinkedList<KeyValue> dataset = new LinkedList<KeyValue>();
+      final Map<String, Object> rawDataset = getProcessManagement().getInstanceData(processInstanceId);
+      for (Map.Entry<String, Object> entry : rawDataset.entrySet()) {
+        if (entry.getValue() != null) {
+          dataset.add(new KeyValue(entry.getKey(), entry.getValue(), entry.getValue().getClass().getName()));
+        }
+      }
+      assignedTask.setDataset(dataset.toArray(new KeyValue[dataset.size()]));
+    }
+    return processTaskListResponse(tasks);
   }
 
   private Response processTaskListResponse(List<TaskRef> taskList)

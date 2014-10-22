@@ -23,8 +23,10 @@ package org.jboss.bpm.console.client.model;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Date;
+import java.util.Map;
 
 /**
  * @author Heiko.Braun <heiko.braun@jboss.com>
@@ -57,6 +59,8 @@ public class TaskRef
   private int priority;
 
   private String description;
+
+  private KeyValue[] dataset = new KeyValue[0];
 
   public TaskRef()
   {
@@ -243,6 +247,14 @@ public class TaskRef
   public void setDescription(String description)
   {
     this.description = description;
+  }
+
+  public KeyValue[] getDataset() {
+    return dataset;
+  }
+
+  public void setDataset(KeyValue[] dataset) {
+    this.dataset = dataset;
   }
 
   public String toString()
