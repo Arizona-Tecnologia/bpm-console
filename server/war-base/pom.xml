@@ -24,8 +24,11 @@
       <groupId>br.com.arizona</groupId>
       <artifactId>visto-jbpm-extensions</artifactId>
     </dependency>
-  
-    <!-- Module -->
+    <dependency>
+      <groupId>org.jbpm</groupId>
+      <artifactId>jbpm-gwt-core</artifactId>
+    </dependency>
+      <!-- Module -->
     <dependency>
       <groupId>org.jboss.bpm</groupId>
       <artifactId>gwt-console-server-integration</artifactId>

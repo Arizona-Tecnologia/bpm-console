@@ -62,8 +62,10 @@
     </licenses>
 
     <properties>
-        <visto-jbpm-extensions.version>2.1.0-SNAPSHOT</visto-jbpm-extensions.version> 
-    
+        <visto-jbpm-extensions.version>3.0.2-RELEASE</visto-jbpm-extensions.version>
+        <jbpm-gwt-core.version>5.4.0.Final</jbpm-gwt-core.version>
+        <drools-core.version>5.5.0.Final</drools-core.version>
+
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <commons.fileupload.version>1.2.1</commons.fileupload.version>
         <commons.io.version>1.4</commons.io.version>
@@ -106,6 +108,20 @@
               <groupId>br.com.arizona</groupId>
               <artifactId>visto-jbpm-extensions</artifactId>
               <version>${visto-jbpm-extensions.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.jbpm</groupId>
+                <artifactId>jbpm-gwt-core</artifactId>
+                <version>${jbpm-gwt-core.version}</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.drools</groupId>
+                <artifactId>drools-core</artifactId>
+                <version>${drools-core.version}</version>
+                <scope>provided</scope>
             </dependency>
 
             <dependency>

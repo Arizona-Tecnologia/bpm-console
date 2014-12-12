@@ -22,6 +22,18 @@
 package org.jboss.bpm.console.server;
 
 import com.google.gson.Gson;
+import com.google.protobuf.ExtensionRegistry;
+import org.apache.commons.lang3.StringUtils;
+import org.drools.common.InternalRuleBase;
+import org.drools.common.InternalWorkingMemory;
+import org.drools.impl.InternalKnowledgeBase;
+import org.drools.marshalling.impl.MarshallerReaderContext;
+import org.drools.marshalling.impl.PersisterHelper;
+import org.drools.marshalling.impl.ProtobufMarshaller;
+import org.drools.marshalling.impl.ProtobufMessages;
+import org.drools.runtime.KnowledgeRuntime;
+import org.drools.runtime.StatefulKnowledgeSession;
+import org.drools.runtime.process.ProcessInstance;
 import org.jboss.bpm.console.client.model.KeyValue;
 import org.jboss.bpm.console.client.model.TaskRef;
 import org.jboss.bpm.console.client.model.TaskRefWrapper;
@@ -34,16 +46,33 @@ import org.jboss.bpm.console.server.plugin.FormAuthorityRef;
 import org.jboss.bpm.console.server.plugin.FormDispatcherPlugin;
 import org.jboss.bpm.console.server.util.ProjectName;
 import org.jboss.bpm.console.server.util.RsComment;
+import org.jbpm.integration.console.StatefulKnowledgeSessionUtil;
+import org.jbpm.marshalling.impl.JBPMMessages;
+import org.jbpm.marshalling.impl.ProcessInstanceMarshaller;
+import org.jbpm.marshalling.impl.ProcessMarshallerRegistry;
+import org.jbpm.marshalling.impl.ProtobufProcessMarshaller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.net.URL;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -119,13 +148,11 @@ public class TaskListFacade
       String instanceData
   )
   {
-    if (instanceData == null) {
       List<TaskRef> assignedTasks = getTaskManagement().getAssignedTasks(idRef);
+      if (instanceData != null && assignedTasks.size() > 0) {
+          fetchDataset(assignedTasks);
+      }
       return processTaskListResponse(assignedTasks);
-    } else {
-        List<TaskRef> assignedTasks = getTaskManagement().getAssignedTasks(idRef);
-        return buildResponse(assignedTasks);
-    }
   }
 
   @GET
@@ -138,28 +165,86 @@ public class TaskListFacade
       String instanceData
   )
   {
-    if (instanceData == null) {
-      List<TaskRef> taskParticipation = getTaskManagement().getUnassignedTasks(idRef, null);
-      return processTaskListResponse(taskParticipation);
-    } else {
-        List<TaskRef> taskParticipation = getTaskManagement().getUnassignedTasks(idRef, null);
-        return buildResponse(taskParticipation);
+    List<TaskRef> participationTasks = getTaskManagement().getUnassignedTasks(idRef, null);
+    if (instanceData != null && participationTasks.size() > 0) {
+      fetchDataset(participationTasks);
     }
+    return processTaskListResponse(participationTasks);
   }
 
-  private Response buildResponse(List<TaskRef> tasks) {
-    for (TaskRef assignedTask : tasks) {
-      final String processInstanceId = assignedTask.getProcessInstanceId();
-      final LinkedList<KeyValue> dataset = new LinkedList<KeyValue>();
-      final Map<String, Object> rawDataset = getProcessManagement().getInstanceData(processInstanceId);
-      for (Map.Entry<String, Object> entry : rawDataset.entrySet()) {
-        if (entry.getValue() != null) {
-          dataset.add(new KeyValue(entry.getKey(), entry.getValue(), entry.getValue().getClass().getName()));
-        }
+  // enriches the task refs with dataset information
+  private void fetchDataset(List<TaskRef> tasks) {
+
+      Connection connection = null;
+      Statement statement = null;
+      ResultSet resultSet = null;
+
+      try {
+          // Group tasks by processInstanceId
+          Map<String, Collection<TaskRef>> tasksByProcessInstanceId = new HashMap<String, Collection<TaskRef>>();
+          for (TaskRef task : tasks) {
+              final String processInstanceId = task.getProcessInstanceId();
+              if (!tasksByProcessInstanceId.containsKey(processInstanceId)) {
+                  tasksByProcessInstanceId.put(processInstanceId, new LinkedList<TaskRef>());
+              }
+              tasksByProcessInstanceId.get(processInstanceId).add(task);
+          }
+
+          // Fetches the datasets (they're actually stored as protobuf blobs on the db)
+          final InitialContext ctx = new InitialContext();
+          final DataSource datasource = (DataSource) ctx.lookup("java:jboss/datasources/jbpmDS");
+          connection = datasource.getConnection();
+          statement = connection.createStatement();
+          resultSet = statement.executeQuery("SELECT" +
+                  " p.id processInstanceId" +
+                  ", p.processInstanceByteArray processInstanceByteArray" +
+                  " FROM jbpmDS.ProcessInstanceInfo p" +
+                  " WHERE p.id IN (" + StringUtils.join(tasksByProcessInstanceId.keySet(), ",") + ")");
+
+          StatefulKnowledgeSession session = null;
+          while (resultSet.next()) {
+              final String processInstanceId = resultSet.getString("processInstanceId");
+              final byte[] processInstanceBytes = resultSet.getBytes("processInstanceByteArray");
+
+              // Dataset unmarshalling voodoo
+              if (session == null) {
+                  session = StatefulKnowledgeSessionUtil.getStatefulKnowledgeSession();
+              }
+              final Collection<KeyValue> datasetList = unmarshallProcessInstanceVariables(processInstanceBytes, session);
+
+              // Sets the dataset on each task ref
+              final KeyValue[] dataset = datasetList.toArray(new KeyValue[datasetList.size()]);
+              for (TaskRef taskRef : tasksByProcessInstanceId.get(processInstanceId)) {
+                  taskRef.setDataset(dataset);
+              }
+          }
+      } catch (NamingException e) {
+          throw new RuntimeException(e);
+      } catch (SQLException e) {
+          throw new RuntimeException(e);
+      } finally {
+          if (resultSet != null) {
+              try {
+                  resultSet.close();
+              } catch (SQLException e) {
+                  // swallow!
+              }
+          }
+          if (statement != null) {
+              try {
+                  statement.close();
+              } catch (SQLException e) {
+                  // swallow!
+              }
+          }
+          if (connection != null) {
+              try {
+                  connection.close();
+              } catch (SQLException e) {
+                  // swallow!
+              }
+          }
       }
-      assignedTask.setDataset(dataset.toArray(new KeyValue[dataset.size()]));
-    }
-    return processTaskListResponse(tasks);
   }
 
   private Response processTaskListResponse(List<TaskRef> taskList)
@@ -190,4 +275,66 @@ public class TaskListFacade
     String json = gson.toJson(wrapper);
     return Response.ok(json).type("application/json").build();
   }
+
+    // Shameless copied from ProcessInstanceInfo.java
+    private Collection<KeyValue> unmarshallProcessInstanceVariables(byte[] processInstanceByteArray, KnowledgeRuntime kruntime) {
+        try {
+            ByteArrayInputStream bais = new ByteArrayInputStream(processInstanceByteArray);
+            MarshallerReaderContext context = new MarshallerReaderContext(bais,
+                    (InternalRuleBase) ((InternalKnowledgeBase) kruntime.getKnowledgeBase()).getRuleBase(),
+                    null,
+                    null,
+                    ProtobufMarshaller.TIMER_READERS,
+                    kruntime.getEnvironment()
+            );
+            getMarshallerFromContext(context); // can't touch this!
+            Collection<KeyValue> processInstanceVariables = unmarshallProcessInstanceVariables(context);
+            context.close();
+            return processInstanceVariables;
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new IllegalArgumentException("IOException while loading process instance: " + e.getMessage(), e);
+        }
+    }
+
+    // Shameless copied from ProcessInstanceInfo.java
+    private ProcessInstanceMarshaller getMarshallerFromContext(MarshallerReaderContext context) throws IOException {
+        ObjectInputStream stream = context.stream;
+        String processInstanceType = stream.readUTF();
+        return ProcessMarshallerRegistry.INSTANCE.getMarshaller( processInstanceType );
+    }
+
+    // Shameless copied from AbstractProtobufProcessInstanceMarshaller.java
+    private Collection<KeyValue> unmarshallProcessInstanceVariables(MarshallerReaderContext context) throws IOException {
+        InternalRuleBase ruleBase = context.ruleBase;
+
+        // try to parse from the stream
+        ExtensionRegistry registry = PersisterHelper.buildRegistry(context, null);
+        ProtobufMessages.Header _header;
+        try {
+          _header = PersisterHelper.readFromStreamWithHeader( context, registry );
+        } catch ( ClassNotFoundException e ) {
+          // Java 5 does not accept [new IOException(String, Throwable)]
+          IOException ioe =  new IOException( "Error deserializing process instance." );
+          ioe.initCause(e);
+          throw ioe;
+        }
+        JBPMMessages.ProcessInstance _instance = JBPMMessages.ProcessInstance.parseFrom(_header.getPayload(), registry);
+
+        final LinkedList<KeyValue> datasetList = new LinkedList<KeyValue>();
+        if ( _instance.getVariableCount() > 0 ) {
+            String processId = _instance.getProcessId();
+            org.drools.definition.process.Process process = ruleBase.getProcess( processId );
+            for ( JBPMMessages.Variable _variable : _instance.getVariableList() ) {
+                try {
+                    Object _value = ProtobufProcessMarshaller.unmarshallVariableValue(context, _variable);
+                    datasetList.add(new KeyValue(_variable.getName(), _value, _value.getClass().getName()));
+                } catch ( ClassNotFoundException e ) {
+                    throw new IllegalArgumentException( "Could not reload variable " + _variable.getName() );
+                }
+            }
+        }
+
+        return datasetList;
+    }
 }
