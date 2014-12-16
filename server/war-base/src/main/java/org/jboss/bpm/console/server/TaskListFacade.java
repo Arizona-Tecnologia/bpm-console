@@ -198,7 +198,7 @@ public class TaskListFacade
           resultSet = statement.executeQuery("SELECT" +
                   " p.id processInstanceId" +
                   ", p.processInstanceByteArray processInstanceByteArray" +
-                  " FROM jbpmDS.ProcessInstanceInfo p" +
+                  " FROM ProcessInstanceInfo p" +
                   " WHERE p.id IN (" + StringUtils.join(tasksByProcessInstanceId.keySet(), ",") + ")");
 
           StatefulKnowledgeSession session = null;
