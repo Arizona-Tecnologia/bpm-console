@@ -72,10 +72,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * REST server module for accessing task related data.
@@ -145,12 +148,18 @@ public class TaskListFacade
       @PathParam("idRef")
       String idRef,
       @QueryParam("instanceData")
-      String instanceData
+      String instanceData,
+      @QueryParam("fields")
+      String fields
   )
   {
       List<TaskRef> assignedTasks = getTaskManagement().getAssignedTasks(idRef);
       if (instanceData != null && assignedTasks.size() > 0) {
-          fetchDataset(assignedTasks);
+          Set<String> fieldSet = new HashSet<String>();
+          if (fields != null) {
+              Collections.addAll(fieldSet, fields.split(","));
+          }
+          fetchDataset(assignedTasks, fieldSet);
       }
       return processTaskListResponse(assignedTasks);
   }
@@ -162,18 +171,24 @@ public class TaskListFacade
       @PathParam("idRef")
       String idRef,
       @QueryParam("instanceData")
-      String instanceData
+      String instanceData,
+      @QueryParam("fields")
+      String fields
   )
   {
     List<TaskRef> participationTasks = getTaskManagement().getUnassignedTasks(idRef, null);
     if (instanceData != null && participationTasks.size() > 0) {
-      fetchDataset(participationTasks);
+        Set<String> fieldSet = new HashSet<String>();
+        if (fields != null) {
+            Collections.addAll(fieldSet, fields.split(","));
+        }
+        fetchDataset(participationTasks, fieldSet);
     }
     return processTaskListResponse(participationTasks);
   }
 
   // enriches the task refs with dataset information
-  private void fetchDataset(List<TaskRef> tasks) {
+  private void fetchDataset(List<TaskRef> tasks, Set<String> fieldSet) {
 
       Connection connection = null;
       Statement statement = null;
@@ -210,7 +225,9 @@ public class TaskListFacade
               if (session == null) {
                   session = StatefulKnowledgeSessionUtil.getStatefulKnowledgeSession();
               }
-              final Collection<KeyValue> datasetList = unmarshallProcessInstanceVariables(processInstanceBytes, session);
+              final Collection<KeyValue> datasetList = unmarshallProcessInstanceVariables(processInstanceBytes,
+                      fieldSet,
+                      session);
 
               // Sets the dataset on each task ref
               final KeyValue[] dataset = datasetList.toArray(new KeyValue[datasetList.size()]);
@@ -277,7 +294,9 @@ public class TaskListFacade
   }
 
     // Shameless copied from ProcessInstanceInfo.java
-    private Collection<KeyValue> unmarshallProcessInstanceVariables(byte[] processInstanceByteArray, KnowledgeRuntime kruntime) {
+    private Collection<KeyValue> unmarshallProcessInstanceVariables(byte[] processInstanceByteArray,
+                                                                    Set<String> fields,
+                                                                    KnowledgeRuntime kruntime) {
         try {
             ByteArrayInputStream bais = new ByteArrayInputStream(processInstanceByteArray);
             MarshallerReaderContext context = new MarshallerReaderContext(bais,
@@ -288,7 +307,7 @@ public class TaskListFacade
                     kruntime.getEnvironment()
             );
             getMarshallerFromContext(context); // can't touch this!
-            Collection<KeyValue> processInstanceVariables = unmarshallProcessInstanceVariables(context);
+            Collection<KeyValue> processInstanceVariables = unmarshallProcessInstanceVariables(context, fields);
             context.close();
             return processInstanceVariables;
         } catch (IOException e) {
@@ -305,7 +324,7 @@ public class TaskListFacade
     }
 
     // Shameless copied from AbstractProtobufProcessInstanceMarshaller.java
-    private Collection<KeyValue> unmarshallProcessInstanceVariables(MarshallerReaderContext context) throws IOException {
+    private Collection<KeyValue> unmarshallProcessInstanceVariables(MarshallerReaderContext context, Set<String> fieldSet) throws IOException {
         InternalRuleBase ruleBase = context.ruleBase;
 
         // try to parse from the stream
@@ -326,11 +345,13 @@ public class TaskListFacade
             String processId = _instance.getProcessId();
             org.drools.definition.process.Process process = ruleBase.getProcess( processId );
             for ( JBPMMessages.Variable _variable : _instance.getVariableList() ) {
-                try {
-                    Object _value = ProtobufProcessMarshaller.unmarshallVariableValue(context, _variable);
-                    datasetList.add(new KeyValue(_variable.getName(), _value, _value.getClass().getName()));
-                } catch ( ClassNotFoundException e ) {
-                    throw new IllegalArgumentException( "Could not reload variable " + _variable.getName() );
+                if (fieldSet == null || fieldSet.isEmpty() || fieldSet.contains(_variable.getName())) {
+                    try {
+                        Object _value = ProtobufProcessMarshaller.unmarshallVariableValue(context, _variable);
+                        datasetList.add(new KeyValue(_variable.getName(), _value, _value.getClass().getName()));
+                    } catch ( ClassNotFoundException e ) {
+                        throw new IllegalArgumentException( "Could not reload variable " + _variable.getName() );
+                    }
                 }
             }
         }
