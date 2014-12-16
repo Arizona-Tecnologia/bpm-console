@@ -155,11 +155,14 @@ public class TaskListFacade
   {
       List<TaskRef> assignedTasks = getTaskManagement().getAssignedTasks(idRef);
       if (instanceData != null && assignedTasks.size() > 0) {
-          Set<String> fieldSet = new HashSet<String>();
+          Set<String> fieldSet = null;
           if (fields != null) {
+              fieldSet = new HashSet<String>();
               Collections.addAll(fieldSet, fields.split(","));
           }
-          fetchDataset(assignedTasks, fieldSet);
+          if (fields == null || !fieldSet.isEmpty()) {
+            fetchDataset(assignedTasks, fieldSet);
+          }
       }
       return processTaskListResponse(assignedTasks);
   }
@@ -178,11 +181,14 @@ public class TaskListFacade
   {
     List<TaskRef> participationTasks = getTaskManagement().getUnassignedTasks(idRef, null);
     if (instanceData != null && participationTasks.size() > 0) {
-        Set<String> fieldSet = new HashSet<String>();
+        Set<String> fieldSet = null;
         if (fields != null) {
+            fieldSet = new HashSet<String>();
             Collections.addAll(fieldSet, fields.split(","));
         }
-        fetchDataset(participationTasks, fieldSet);
+        if (fields == null || !fieldSet.isEmpty()) {
+            fetchDataset(participationTasks, fieldSet);
+        }
     }
     return processTaskListResponse(participationTasks);
   }
@@ -295,7 +301,7 @@ public class TaskListFacade
 
     // Shameless copied from ProcessInstanceInfo.java
     private Collection<KeyValue> unmarshallProcessInstanceVariables(byte[] processInstanceByteArray,
-                                                                    Set<String> fields,
+                                                                    Set<String> fieldSet,
                                                                     KnowledgeRuntime kruntime) {
         try {
             ByteArrayInputStream bais = new ByteArrayInputStream(processInstanceByteArray);
@@ -307,7 +313,7 @@ public class TaskListFacade
                     kruntime.getEnvironment()
             );
             getMarshallerFromContext(context); // can't touch this!
-            Collection<KeyValue> processInstanceVariables = unmarshallProcessInstanceVariables(context, fields);
+            Collection<KeyValue> processInstanceVariables = unmarshallProcessInstanceVariables(context, fieldSet);
             context.close();
             return processInstanceVariables;
         } catch (IOException e) {
@@ -345,7 +351,7 @@ public class TaskListFacade
             String processId = _instance.getProcessId();
             org.drools.definition.process.Process process = ruleBase.getProcess( processId );
             for ( JBPMMessages.Variable _variable : _instance.getVariableList() ) {
-                if (fieldSet == null || fieldSet.isEmpty() || fieldSet.contains(_variable.getName())) {
+                if (fieldSet == null || fieldSet.contains(_variable.getName())) {
                     try {
                         Object _value = ProtobufProcessMarshaller.unmarshallVariableValue(context, _variable);
                         datasetList.add(new KeyValue(_variable.getName(), _value, _value.getClass().getName()));
