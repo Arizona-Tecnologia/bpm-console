@@ -47,6 +47,7 @@ public class ConsoleServerApplication extends Application
     singletons.add(new UserMgmtFacade());    
     singletons.add(new EngineFacade());
     singletons.add(new FormProcessingFacade());
+    singletons.add(new ProcessQueryFacade());
     try {
 		@SuppressWarnings("rawtypes")
 		Class reportFacadeDefinition = Class
