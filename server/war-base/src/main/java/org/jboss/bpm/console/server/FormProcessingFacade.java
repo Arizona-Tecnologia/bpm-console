@@ -197,7 +197,7 @@ public class FormProcessingFacade
     ProcessInstanceRef instance =
         getProcessManagement().newInstance(definitionId, mapping.processVars);
 
-    return Response.ok(SUCCESSFULLY_PROCESSED_INPUT).build();
+    return Response.ok(SUCCESSFULLY_PROCESSED_INPUT).header("X-Process-Instance-Id", instance.getId()).build();
   }
 
   private Response provideForm(FormAuthorityRef authorityRef)
