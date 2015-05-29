@@ -72,13 +72,7 @@ public class ProcessMgmtFacade
    * Lazy load the {@link org.jboss.bpm.console.server.plugin.FormDispatcherPlugin}.
    * Can be null if the plugin is not available.
    */
-  private FormDispatcherPlugin getFormDispatcherPlugin()
-  {
-    if(null==this.formPlugin)
-    {
-      this.formPlugin = PluginMgr.load(FormDispatcherPlugin.class);
-    }
-
+  private FormDispatcherPlugin getFormDispatcherPlugin(){
     return this.formPlugin;
   }
 
@@ -96,25 +90,11 @@ public class ProcessMgmtFacade
 
   private GraphViewerPlugin getGraphViewerPlugin()
   {
-    if(graphViewerPlugin==null)
-    {
-      graphViewerPlugin = PluginMgr.load(
-          GraphViewerPlugin.class
-      );
-    }
-
     return graphViewerPlugin;
   }
 
     private ProcessActivityPlugin getActivityPlugin()
   {
-    if(activityPlugin==null)
-    {
-      activityPlugin = PluginMgr.load(
-          ProcessActivityPlugin.class
-      );
-    }
-
     return activityPlugin;
   }
 
