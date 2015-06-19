@@ -272,21 +272,6 @@ public class TaskListFacade
 
   private Response processTaskListResponse(List<TaskRef> taskList)
   {
-    // decorate task form URL if plugin available
-    FormDispatcherPlugin formPlugin = getFormDispatcherPlugin();
-    if(formPlugin!=null)
-    {
-      for(TaskRef task : taskList)
-      {
-        URL taskFormURL = formPlugin.getDispatchUrl(
-            new FormAuthorityRef(String.valueOf(task.getId()))
-        );
-        if(taskFormURL!=null)
-        {
-          task.setUrl(taskFormURL.toExternalForm());
-        }
-      }
-    }
 
     TaskRefWrapper wrapper = new TaskRefWrapper(taskList);
     return createJsonResponse(wrapper);
