@@ -10,7 +10,7 @@
   <parent>
     <groupId>org.jboss.bpm</groupId>
     <artifactId>gwt-console-servermodule</artifactId>
-    <version>4.2.4-RELEASE</version>
+    <version>4.2.5-RELEASE</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
