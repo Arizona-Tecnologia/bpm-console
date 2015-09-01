@@ -20,7 +20,9 @@ public class ProcessHistoryQueryDao {
         this.datasource = datasource;
     }
 
-    public Map<Long, Map<String, Object>> queryFinishedProcessHistory(String[] excludeProcessIds, String[] fields,
+    public Map<Long, Map<String, Object>> queryFinishedProcessHistory(String[] listTemplateId,
+                                                                      String[] excludeProcessIds,
+                                                                      String[] fields,
                                                                       String creator,
                                                                       long offset,
                                                                       long limit) {
@@ -53,6 +55,22 @@ public class ProcessHistoryQueryDao {
                 queryProcessInstanceIds = queryProcessInstanceIds.replace("__FILTER_CREATOR__", "");
             }
 
+            //visto_processTemplate
+            String queryTemplate = "";
+            if (listTemplateId.length > 0) {
+                queryTemplate =  " and exists (select 1 from VariableInstanceLog where" +
+                        " processInstanceId = pil.processInstanceId" +
+                        " and variableId = 'visto_processTemplate' and ( value like ? ";
+
+                if(listTemplateId.length > 1) {
+                    queryTemplate = queryTemplate + StringUtils.repeat(" or value like ? ", listTemplateId.length -1);
+                }
+            }
+
+            queryProcessInstanceIds = queryProcessInstanceIds.replace("__FILTER_TEMPLATE__",
+                    queryTemplate + "))");
+
+
             connection = datasource.getConnection();
             statement = connection.prepareStatement(queryProcessInstanceIds);
 
@@ -63,8 +81,12 @@ public class ProcessHistoryQueryDao {
             if (StringUtils.isNotBlank(creator)) {
                 statement.setString(paramQueryProcessInstanceIds++, creator);
             }
+            for (String templateId : listTemplateId) {
+                statement.setString(paramQueryProcessInstanceIds++, "{\"id\":"+templateId+",\"name\":%");
+            }
             statement.setLong(paramQueryProcessInstanceIds++, offset);
             statement.setLong(paramQueryProcessInstanceIds, limit);
+
 
             resultSet = statement.executeQuery();
 
@@ -155,9 +177,10 @@ public class ProcessHistoryQueryDao {
      * Processos terminados.
      */
     private static final String QUERY_FINISHED_PROCESS_INSTANCE_ID = "select pil.* from ProcessInstanceLog pil" +
-            " where pil.end_date is not null" +
+            " where pil.end_date is not null and pil.status = 2 " +
             "__EXCLUDE_PROCESS_IDS__" +
             "__FILTER_CREATOR__" +
+            "__FILTER_TEMPLATE__" +
             " order by pil.processInstanceId desc limit ?, ?";
 
     /**

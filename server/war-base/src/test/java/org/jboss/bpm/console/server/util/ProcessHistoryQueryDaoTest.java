@@ -22,7 +22,9 @@ public class ProcessHistoryQueryDaoTest extends TestCase {
 
         final ProcessHistoryQueryDao dao = new ProcessHistoryQueryDao(dataSource);
         int count = 0;
-        final Map<Long, Map<String, Object>> result = dao.queryFinishedProcessHistory(new String[] {
+        final Map<Long, Map<String, Object>> result = dao.queryFinishedProcessHistory(
+                new String[] {"379"},
+                new String[] {
                 "boticario.dam.aprovacao.folheteria.v1",
                 "boticario.dam.aprovacao.folheteria.v1",
                 "boticario.dam.aprovacao.clube.evolucao.v1",

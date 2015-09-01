@@ -26,6 +26,8 @@ public class ProcessQueryFacade {
     @Path("finished")
     @Produces("application/json")
     public Collection<Map<String, Object>> getFinishedProcesses(
+            @QueryParam("listTemplateId")
+            String[] listTemplateId,
             @QueryParam("excludeProcessId")
             String[] excludeProcessIds,
             @QueryParam("field")
@@ -46,7 +48,7 @@ public class ProcessQueryFacade {
         try {
             final InitialContext ctx = new InitialContext();
             final DataSource datasource = (DataSource) ctx.lookup("java:jboss/datasources/jbpmDS");
-            return new ProcessHistoryQueryDao(datasource).queryFinishedProcessHistory(excludeProcessIds, fields, creator, offset, limit).values();
+            return new ProcessHistoryQueryDao(datasource).queryFinishedProcessHistory(listTemplateId, excludeProcessIds, fields, creator, offset, limit).values();
         } catch (NamingException e) {
             throw new RuntimeException(e);
         }
