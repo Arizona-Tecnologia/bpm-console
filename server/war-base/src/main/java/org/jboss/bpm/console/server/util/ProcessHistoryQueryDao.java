@@ -20,12 +20,11 @@ public class ProcessHistoryQueryDao {
         this.datasource = datasource;
     }
 
-    public Map<Long, Map<String, Object>> queryFinishedProcessHistory(String[] listTemplateId,
+    public Map<Long, Map<String, Object>> queryFinishedProcessHistory(String[] filterProcessDefinitionId,
+                                                                      String[] filterTemplateId,
                                                                       String[] excludeProcessIds,
                                                                       String[] fields,
-                                                                      String creator,
-                                                                      long offset,
-                                                                      long limit) {
+                                                                      long offset, long limit, String creator) {
         if (fields == null) {
             fields = new String[0];
         }
@@ -57,19 +56,29 @@ public class ProcessHistoryQueryDao {
 
             //visto_processTemplate
             String queryTemplate = "";
-            if (listTemplateId.length > 0) {
+            if (filterTemplateId.length > 0) {
                 queryTemplate =  " and exists (select 1 from VariableInstanceLog where" +
                         " processInstanceId = pil.processInstanceId" +
                         " and variableId = 'visto_processTemplate' and ( value like ? ";
 
-                if(listTemplateId.length > 1) {
-                    queryTemplate = queryTemplate + StringUtils.repeat(" or value like ? ", listTemplateId.length -1);
+                if(filterTemplateId.length > 1) {
+                    queryTemplate = queryTemplate + StringUtils.repeat(" or value like ? ", filterTemplateId.length -1);
                 }
+
+                queryTemplate = queryTemplate + "))";
             }
 
-            queryProcessInstanceIds = queryProcessInstanceIds.replace("__FILTER_TEMPLATE__",
-                    queryTemplate + "))");
+            queryProcessInstanceIds = queryProcessInstanceIds.replace("__FILTER_TEMPLATE__",queryTemplate);
+            //fim visto_processTemplate
 
+
+            //filterProcessDefinitionId
+            if (filterProcessDefinitionId.length > 0) {
+                queryProcessInstanceIds = queryProcessInstanceIds.replace("__INCLUDE_ONLY_PROCESS_IDS__",
+                        " and processId in (" + StringUtils.repeat("?", ",", filterProcessDefinitionId.length) + ")");
+            } else {
+                queryProcessInstanceIds = queryProcessInstanceIds.replace("__INCLUDE_ONLY_PROCESS_IDS__", "");
+            }
 
             connection = datasource.getConnection();
             statement = connection.prepareStatement(queryProcessInstanceIds);
@@ -81,8 +90,11 @@ public class ProcessHistoryQueryDao {
             if (StringUtils.isNotBlank(creator)) {
                 statement.setString(paramQueryProcessInstanceIds++, creator);
             }
-            for (String templateId : listTemplateId) {
+            for (String templateId : filterTemplateId) {
                 statement.setString(paramQueryProcessInstanceIds++, "{\"id\":"+templateId+",\"name\":%");
+            }
+            for (String processId : filterProcessDefinitionId) {
+                statement.setString(paramQueryProcessInstanceIds++, processId);
             }
             statement.setLong(paramQueryProcessInstanceIds++, offset);
             statement.setLong(paramQueryProcessInstanceIds, limit);
@@ -181,6 +193,7 @@ public class ProcessHistoryQueryDao {
             "__EXCLUDE_PROCESS_IDS__" +
             "__FILTER_CREATOR__" +
             "__FILTER_TEMPLATE__" +
+            "__INCLUDE_ONLY_PROCESS_IDS__" +
             " order by pil.processInstanceId desc limit ?, ?";
 
     /**
