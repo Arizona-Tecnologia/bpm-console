@@ -4,7 +4,7 @@
     <name>JBoss BPM - Console</name>
     <groupId>org.jboss.bpm</groupId>
     <artifactId>gwt-console-parent</artifactId>
-    <version>4.2.9-RELEASE</version>
+    <version>4.2.11-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <description>BPM Management console used by Riftsaw, jBPM and Drools Flow</description>
@@ -71,8 +71,8 @@
     </licenses>
 
     <properties>
-        <visto-jbpm-extensions.version>4.2.9-RELEASE</visto-jbpm-extensions.version>
-        <jbpm-gwt-core.version>4.2.9-RELEASE</jbpm-gwt-core.version>
+        <visto-jbpm-extensions.version>4.2.10-RELEASE</visto-jbpm-extensions.version>
+        <jbpm-gwt-core.version>4.2.11-SNAPSHOT</jbpm-gwt-core.version>
         <drools-core.version>5.5.0.Final</drools-core.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
