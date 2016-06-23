@@ -3,6 +3,7 @@ package org.jboss.bpm.console.server.util;
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
 import junit.framework.TestCase;
 
+import java.util.Date;
 import java.util.Map;
 
 public class ProcessHistoryQueryDaoTest extends TestCase {
@@ -21,6 +22,13 @@ public class ProcessHistoryQueryDaoTest extends TestCase {
         final ProcessHistoryQueryDao dao = new ProcessHistoryQueryDao(dataSource);
         int count = 0;
         final Map<Long, Map<String, Object>> result = dao.queryFinishedProcessHistory(
+                "someProcessName",
+                "Aprovado",
+                "someFileName",
+                new Date().getTime(),
+                new Date().getTime(),
+                new Date().getTime(),
+                new Date().getTime(),
                 new String[]{}, new String[] {},
                 new String[] {
                 "boticario.dam.aprovacao.folheteria.v1",

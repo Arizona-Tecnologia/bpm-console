@@ -10,7 +10,7 @@
   <parent>
     <groupId>org.jboss.bpm</groupId>
     <artifactId>gwt-console-servermodule</artifactId>
-    <version>4.4.2-SNAPSHOT</version>
+    <version>4.5.1-RELEASE</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -18,7 +18,7 @@
     <dependency>
         <groupId>br.com.arizona</groupId>
         <artifactId>visto-jbpm-extensions</artifactId>
-        <version>4.2.1-RELEASE</version>
+        <version>${visto-jbpm-extensions.version}</version>
     </dependency>
   
     <!-- Module -->
